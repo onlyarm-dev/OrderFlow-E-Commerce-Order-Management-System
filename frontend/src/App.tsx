@@ -5,6 +5,7 @@ import { Dashboard } from './components/Dashboard';
 import { OrdersView } from './components/OrdersView';
 import { ProductsView } from './components/ProductsView';
 import { Shop } from './components/Shop';
+import { LanguageToggle, useI18n } from './i18n';
 
 type View = 'dashboard' | 'products' | 'orders';
 
@@ -18,6 +19,7 @@ function restore_session(): AuthSession | null {
 }
 
 export default function App() {
+  const { t } = useI18n();
   const [session, set_session] = useState<AuthSession | null>(restore_session);
   const [view, set_view] = useState<View>('dashboard');
   const [products, set_products] = useState<Product[]>([]);
@@ -67,24 +69,25 @@ export default function App() {
   if (!session) return <AuthScreen on_auth={authenticate} />;
 
   const nav_items: { id: View; label: string; icon: string }[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: '⌂' },
-    { id: 'orders', label: 'Orders', icon: '□' },
-    { id: 'products', label: 'Products', icon: '◇' },
+    { id: 'dashboard', label: t('dashboard'), icon: '⌂' },
+    { id: 'orders', label: t('orders'), icon: '□' },
+    { id: 'products', label: t('products'), icon: '◇' },
   ];
-  const title = view === 'dashboard' ? `Good morning, ${session.user.first_name}.` : view === 'products' ? 'Products & inventory' : 'Order management';
-  const subtitle = view === 'dashboard' ? 'Here’s what’s happening with your store.' : view === 'products' ? 'Keep your catalog and available stock clear.' : 'Create and track orders in one place.';
+  const title = view === 'dashboard' ? `${t('morning')}, ${session.user.first_name}.` : view === 'products' ? t('products_title') : t('orders_title');
+  const subtitle = view === 'dashboard' ? t('dashboard_hint') : view === 'products' ? t('products_hint') : t('orders_hint');
+  const role_label = t(`role_${session.user.role}`);
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[250px_1fr]">
       <aside className="hidden min-h-screen bg-ink p-5 lg:flex lg:flex-col">
         <div className="mb-10 flex items-center gap-3 px-2 pt-2"><div className="grid size-10 place-items-center rounded-xl bg-lime font-bold text-ink">OA</div><div><p className="font-['Manrope'] text-lg font-extrabold text-white">Onlyarm</p><p className="text-xs text-stone-400">Order management</p></div></div>
         <nav className="space-y-1">{nav_items.map((item) => <button key={item.id} className={`nav-item w-full ${view === item.id ? 'active' : ''}`} onClick={() => set_view(item.id)}><span className="text-lg">{item.icon}</span>{item.label}</button>)}</nav>
-        <div className="mt-auto"><a href="/shop" className="nav-item mb-3 w-full"><span>↗</span> Open storefront</a><div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-4"><p className="text-sm font-semibold text-white">{session.user.first_name} {session.user.last_name}</p><p className="mt-1 text-xs capitalize text-stone-400">{session.user.role} · {session.user.email}</p></div><button className="nav-item w-full" onClick={logout}><span>↪</span> Sign out</button></div>
+        <div className="mt-auto"><div className="mb-3"><LanguageToggle dark /></div><a href="/shop" className="nav-item mb-3 w-full"><span>↗</span> {t('open_store')}</a><div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-4"><p className="text-sm font-semibold text-white">{session.user.first_name} {session.user.last_name}</p><p className="mt-1 text-xs text-stone-400">{role_label} · {session.user.email}</p></div><button className="nav-item w-full" onClick={logout}><span>↪</span> {t('sign_out')}</button></div>
       </aside>
 
       <main className="min-w-0 px-5 py-6 sm:px-8 lg:px-10 lg:py-9">
-        <div className="mb-5 flex gap-2 overflow-x-auto lg:hidden">{nav_items.map((item) => <button key={item.id} className={`whitespace-nowrap rounded-xl px-4 py-2 text-sm font-bold ${view === item.id ? 'bg-ink text-white' : 'bg-white'}`} onClick={() => set_view(item.id)}>{item.label}</button>)}<button className="ml-auto rounded-xl bg-white px-4 py-2 text-sm" onClick={logout}>Sign out</button></div>
-        <header className="mb-9 flex flex-col justify-between gap-5 sm:flex-row sm:items-center"><div><p className="mb-1 text-sm font-semibold uppercase tracking-wider text-moss">{view}</p><h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{title}</h1><p className="mt-2 text-stone-500">{subtitle}</p></div><div className="flex items-center gap-3 self-start rounded-2xl bg-white p-2 pr-4 shadow-card"><div className="grid size-10 place-items-center rounded-xl bg-coral font-bold text-white">{session.user.first_name.slice(0, 1).toUpperCase()}</div><div><p className="text-sm font-bold">{session.user.first_name}</p><p className="text-xs capitalize text-stone-500">{session.user.role}</p></div></div></header>
+        <div className="mb-5 flex gap-2 overflow-x-auto lg:hidden">{nav_items.map((item) => <button key={item.id} className={`whitespace-nowrap rounded-xl px-4 py-2 text-sm font-bold ${view === item.id ? 'bg-ink text-white' : 'bg-white'}`} onClick={() => set_view(item.id)}>{item.label}</button>)}<LanguageToggle /><button className="ml-auto rounded-xl bg-white px-4 py-2 text-sm" onClick={logout}>{t('sign_out')}</button></div>
+        <header className="mb-9 flex flex-col justify-between gap-5 sm:flex-row sm:items-center"><div><p className="mb-1 text-sm font-semibold uppercase tracking-wider text-moss">{view === 'dashboard' ? t('dashboard') : view === 'products' ? t('products') : t('orders')}</p><h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{title}</h1><p className="mt-2 text-stone-500">{subtitle}</p></div><div className="flex items-center gap-3 self-start rounded-2xl bg-white p-2 pr-4 shadow-card"><div className="grid size-10 place-items-center rounded-xl bg-coral font-bold text-white">{session.user.first_name.slice(0, 1).toUpperCase()}</div><div><p className="text-sm font-bold">{session.user.first_name}</p><p className="text-xs text-stone-500">{role_label}</p></div></div></header>
 
         {view === 'dashboard' && <Dashboard products={products} orders={orders} api_error={api_error} />}
         {view === 'products' && <ProductsView session={session} products={products} loading={loading_products} error={api_error} search={search} set_search={set_search} reload={load_products} />}

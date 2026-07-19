@@ -1,12 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   * { @apply border-stone-200; }
-  body { @apply m-0 min-w-80 bg-canvas font-['DM_Sans'] text-ink antialiased; }
-  h1, h2, h3 { @apply font-['Manrope']; }
+  body { @apply m-0 min-w-80 bg-canvas text-ink antialiased; font-family: 'DM Sans', 'Noto Sans Thai', sans-serif; }
+  h1, h2, h3 { font-family: 'Manrope', 'Noto Sans Thai', sans-serif; }
 }
 
 @layer components {

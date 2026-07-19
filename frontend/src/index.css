@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { @apply border-stone-200; }
+  body { @apply m-0 min-w-80 bg-canvas font-['DM_Sans'] text-ink antialiased; }
+  h1, h2, h3 { @apply font-['Manrope']; }
+}
+
+@layer components {
+  .nav-item { @apply flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-stone-400 transition hover:bg-white/10 hover:text-white; }
+  .nav-item.active { @apply bg-lime text-ink hover:bg-lime hover:text-ink; }
+  .field { @apply w-full rounded-xl border bg-white px-4 py-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-moss focus:ring-2 focus:ring-moss/10; }
+  .button-primary { @apply rounded-xl bg-ink px-5 py-3 text-sm font-bold text-white transition hover:bg-moss disabled:cursor-not-allowed disabled:opacity-50; }
+  .button-secondary { @apply rounded-xl border bg-white px-5 py-3 text-sm font-bold transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50; }
+}

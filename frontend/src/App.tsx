@@ -54,18 +54,25 @@ export default function App() {
 
   function authenticate(next_session: AuthSession) {
     sessionStorage.setItem('onlyarm_session', JSON.stringify(next_session));
+    const destination = next_session.user.role === 'admin' ? '/' : '/shop';
+    if (window.location.pathname !== destination) {
+      window.history.replaceState({}, '', destination);
+    }
     set_session(next_session);
   }
 
   function logout() {
     sessionStorage.removeItem('onlyarm_session');
+    if (window.location.pathname !== '/') {
+      window.history.replaceState({}, '', '/');
+    }
     set_session(null);
     set_products([]);
     set_orders([]);
     set_view('dashboard');
   }
 
-  if (window.location.pathname.startsWith('/shop')) return <Shop session={session} on_auth={authenticate} />;
+  if (window.location.pathname.startsWith('/shop') || (session && session.user.role !== 'admin')) return <Shop session={session} on_auth={authenticate} on_logout={logout} />;
   if (!session) return <AuthScreen on_auth={authenticate} />;
 
   const nav_items: { id: View; label: string; icon: string }[] = [

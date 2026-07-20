@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { create_order, fetch_products, login, register, type AuthSession, type Product } from '../api';
+import { create_order, fetch_products, type AuthSession, type Product } from '../api';
+import { DemoAccountPicker } from './DemoAccountPicker';
 import { Modal } from './Modal';
 import { LanguageToggle, useI18n } from '../i18n';
 
-type Props = { session: AuthSession | null; on_auth: (session: AuthSession) => void };
+type Props = { session: AuthSession | null; on_auth: (session: AuthSession) => void; on_logout: () => void };
 type Cart = Record<string, number>;
 
 function money(value: string | number): string {
@@ -12,34 +13,10 @@ function money(value: string | number): string {
 
 function ShopAuth({ on_close, on_auth }: { on_close: () => void; on_auth: (session: AuthSession) => void }) {
   const { t } = useI18n();
-  const [mode, set_mode] = useState<'login' | 'register'>('login');
-  const [loading, set_loading] = useState(false);
-  const [error, set_error] = useState('');
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    set_loading(true);
-    set_error('');
-    try {
-      const email = String(data.get('email'));
-      const password = String(data.get('password'));
-      const next_session = mode === 'login'
-        ? await login(email, password)
-        : await register({ email, password, first_name: String(data.get('first_name')), last_name: String(data.get('last_name')) });
-      on_auth(next_session);
-      on_close();
-    } catch (reason) {
-      set_error(reason instanceof Error ? reason.message : 'Unable to continue');
-    } finally {
-      set_loading(false);
-    }
-  }
-
-  return <Modal title={mode === 'login' ? t('sign_in_checkout') : t('create_account')} on_close={on_close}><form className="space-y-4" onSubmit={(event) => void submit(event)}>{mode === 'register' && <div className="grid grid-cols-2 gap-3"><input className="field" name="first_name" placeholder={t('first_name')} required /><input className="field" name="last_name" placeholder={t('last_name')} required /></div>}<input className="field" name="email" type="email" placeholder={t('email')} required /><input className="field" name="password" type="password" minLength={8} placeholder={t('password')} required />{error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}<button className="button-primary w-full" disabled={loading}>{loading ? t('please_wait') : mode === 'login' ? t('sign_in') : t('create_account')}</button></form><button className="mt-5 w-full text-sm font-bold text-moss" onClick={() => set_mode(mode === 'login' ? 'register' : 'login')}>{mode === 'login' ? t('new_customer') : t('have_account')}</button></Modal>;
+  return <Modal title={t('sign_in_checkout')} on_close={on_close}><p className="text-sm text-stone-500">{t('sign_in_hint')}</p><DemoAccountPicker on_auth={on_auth} on_complete={on_close} /></Modal>;
 }
 
-export function Shop({ session, on_auth }: Props) {
+export function Shop({ session, on_auth, on_logout }: Props) {
   const { t } = useI18n();
   const [products, set_products] = useState<Product[]>([]);
   const [cart, set_cart] = useState<Cart>({});
@@ -129,7 +106,7 @@ export function Shop({ session, on_auth }: Props) {
 
   return (
     <div className="min-h-screen bg-[#faf9f6] text-ink">
-      <header className="sticky top-0 z-30 border-b bg-[#faf9f6]/90 backdrop-blur-xl"><div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8"><a href="/shop" className="flex items-center gap-3"><div className="grid size-10 place-items-center rounded-full bg-ink font-['Manrope'] text-sm font-extrabold text-lime">OA</div><div><p className="font-['Manrope'] text-lg font-extrabold leading-none">ONLYARM</p><p className="mt-1 text-[10px] uppercase tracking-[.25em] text-stone-400">{t('shop_brand_note')}</p></div></a><nav className="hidden items-center gap-8 text-sm font-semibold sm:flex"><a href="#new">{t('shop_new')}</a><a href="#collection">{t('shop_collection_link')}</a><a href="/">{t('manage_store')}</a></nav><div className="flex items-center gap-3"><LanguageToggle />{session ? <span className="hidden text-sm text-stone-500 md:block">{t('hi')}, {session.user.first_name}</span> : <button className="text-sm font-bold" onClick={() => set_show_auth(true)}>{t('sign_in')}</button>}<button className="relative rounded-full bg-ink px-4 py-2.5 text-sm font-bold text-white" onClick={() => set_show_cart(true)}>{t('bag')} <span className="ml-1 text-lime">({cart_count})</span></button></div></div></header>
+      <header className="sticky top-0 z-30 border-b bg-[#faf9f6]/90 backdrop-blur-xl"><div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8"><a href="/shop" className="flex items-center gap-3"><div className="grid size-10 place-items-center rounded-full bg-ink font-['Manrope'] text-sm font-extrabold text-lime">OA</div><div><p className="font-['Manrope'] text-lg font-extrabold leading-none">ONLYARM</p><p className="mt-1 text-[10px] uppercase tracking-[.25em] text-stone-400">{t('shop_brand_note')}</p></div></a><nav className="hidden items-center gap-8 text-sm font-semibold sm:flex"><a href="#new">{t('shop_new')}</a><a href="#collection">{t('shop_collection_link')}</a>{session?.user.role === 'admin' && <a href="/">{t('manage_store')}</a>}</nav><div className="flex items-center gap-3"><LanguageToggle />{session ? <><span className="hidden text-sm text-stone-500 md:block">{t('hi')}, {session.user.first_name}</span><button className="text-sm font-bold text-moss" onClick={on_logout}>{t('sign_out')}</button></> : <button className="text-sm font-bold" onClick={() => set_show_auth(true)}>{t('sign_in')}</button>}<button className="relative rounded-full bg-ink px-4 py-2.5 text-sm font-bold text-white" onClick={() => set_show_cart(true)}>{t('bag')} <span className="ml-1 text-lime">({cart_count})</span></button></div></div></header>
 
       <main>
         <section id="new" className="mx-auto grid max-w-7xl gap-8 px-5 pb-16 pt-10 sm:px-8 lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:pb-24 lg:pt-16"><div><p className="mb-5 text-xs font-bold uppercase tracking-[.3em] text-moss">{t('shop_tag')}</p><h1 className="max-w-3xl text-5xl font-extrabold leading-[.98] tracking-[-.05em] sm:text-7xl">{t('shop_title_1')}<br /><span className="text-moss">{t('shop_title_2')}</span></h1><p className="mt-7 max-w-xl text-base leading-7 text-stone-500 sm:text-lg">{t('shop_intro')}</p><a href="#collection" className="mt-8 inline-block rounded-full bg-ink px-7 py-4 text-sm font-bold text-white">{t('shop_cta')}</a></div><div className="relative min-h-80 overflow-hidden rounded-[2.5rem] bg-[#dce9df] p-8 sm:min-h-[440px]"><div className="absolute -right-12 -top-12 size-64 rounded-full border-[40px] border-lime/70" /><div className="absolute bottom-8 left-8 right-8 rounded-3xl bg-white/75 p-6 backdrop-blur"><p className="text-xs font-bold uppercase tracking-widest text-moss">{t('featured')}</p><p className="mt-2 text-2xl font-extrabold">{t('featured_title')}</p><p className="mt-2 text-sm text-stone-500">{t('featured_note')}</p></div></div></section>

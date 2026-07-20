@@ -27,19 +27,14 @@ An SQL-first e-commerce order management foundation built with React, Express, T
    - Swagger: http://localhost:4000/docs
    - Health check: http://localhost:4000/health
 
-4. Load optional local product data:
+4. Load the demo accounts and optional local product data:
 
    ```bash
    npm run seed:dev
    ```
 
-5. Register your own account in the UI, then promote it for local administration:
-
-   ```bash
-   docker compose exec database psql -U postgres -d onlyarm_oms -c "UPDATE users SET role = 'admin' WHERE email = 'you@example.com';"
-   ```
-
-   Replace `you@example.com` with the address you registered. No default credentials are committed to the repository.
+5. Choose **Admin** or **Customer** on the sign-in screen. The local demo accounts are
+   `admin@onlyarm.test` and `customer@onlyarm.test`; both use `OnlyarmDemo123!`.
 
 The initial SQL migration runs automatically the first time the PostgreSQL volume is created.
 

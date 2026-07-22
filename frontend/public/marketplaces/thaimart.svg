@@ -1,0 +1,7 @@
+<svg role="img" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <title>Thaimart</title>
+  <rect width="64" height="64" rx="18" fill="#D71920"/>
+  <path fill="#fff" d="M16 21h34v8H37v22H27V29H16v-8Z"/>
+  <path fill="#fff" d="M12 12h9v8h-9zM43 12h9v8h-9z" opacity=".72"/>
+  <path fill="none" stroke="#fff" stroke-linecap="round" stroke-width="5" d="M18 44c-5 0-8-3-8-8M46 44c5 0 8-3 8-8"/>
+</svg>

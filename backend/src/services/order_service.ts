@@ -4,6 +4,7 @@ import { AppError } from '../utils/app_error.js';
 
 type OrderItemInput = { product_id: string; quantity: number };
 type Address = { name: string; address_line_1: string; city: string; postal_code: string; country: string };
+type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 
 function create_order_number(): string {
   return `OMS-${Date.now()}-${Math.floor(Math.random() * 10_000).toString().padStart(4, '0')}`;
@@ -97,4 +98,122 @@ export async function get_orders(user_id: string, role: string, page: number, li
     data: result.rows.map(({ total_count: _total_count, ...order }) => order),
     pagination: { page, limit, total, total_pages: Math.ceil(total / limit) },
   };
+}
+
+export async function get_order(order_id: string, user_id: string, role: string) {
+  const values: unknown[] = [order_id];
+  const conditions = ['o.id = $1', 'o.deleted_at IS NULL'];
+  if (role === 'customer') {
+    values.push(user_id);
+    conditions.push(`o.user_id = $${values.length}`);
+  }
+
+  const order_result = await db.query(
+    `SELECT o.id, o.order_number, o.user_id, o.status, o.total_amount,
+            o.shipping_address, o.created_at, o.updated_at,
+            u.email AS customer_email, u.first_name AS customer_first_name,
+            u.last_name AS customer_last_name
+     FROM orders o
+     JOIN users u ON u.id = o.user_id
+     WHERE ${conditions.join(' AND ')}`,
+    values,
+  );
+  const order = order_result.rows[0];
+  if (!order) throw new AppError(404, 'order_not_found', 'Order not found');
+
+  const [items_result, history_result] = await Promise.all([
+    db.query(
+      `SELECT id, product_id, sku, product_name, quantity, unit_price, line_total, created_at
+       FROM order_items
+       WHERE order_id = $1
+       ORDER BY created_at ASC, id ASC`,
+      [order_id],
+    ),
+    db.query(
+      `SELECT h.id, h.status, h.note, h.created_at, h.changed_by,
+              u.first_name AS changed_by_first_name, u.last_name AS changed_by_last_name
+       FROM order_status_history h
+       LEFT JOIN users u ON u.id = h.changed_by
+       WHERE h.order_id = $1
+       ORDER BY h.created_at DESC, h.id DESC`,
+      [order_id],
+    ),
+  ]);
+
+  return { ...order, items: items_result.rows, status_history: history_result.rows };
+}
+
+function check_status_transition(current_status: OrderStatus, next_status: OrderStatus): void {
+  const can_ship = ['pending', 'confirmed', 'processing'].includes(current_status) && next_status === 'shipped';
+  const can_deliver = current_status === 'shipped' && next_status === 'delivered';
+  if (!can_ship && !can_deliver) {
+    throw new AppError(409, 'invalid_status_transition', `Cannot change order from ${current_status} to ${next_status}`);
+  }
+}
+
+async function commit_reserved_stock(client: PoolClient, order_id: string): Promise<void> {
+  const items_result = await client.query(
+    `SELECT product_id, quantity
+     FROM order_items
+     WHERE order_id = $1
+     ORDER BY product_id ASC
+     FOR UPDATE`,
+    [order_id],
+  );
+
+  for (const item of items_result.rows) {
+    const inventory_result = await client.query(
+      `UPDATE inventory
+       SET quantity = quantity - $1,
+           reserved_quantity = reserved_quantity - $1,
+           updated_at = now()
+       WHERE product_id = $2
+         AND quantity >= $1
+         AND reserved_quantity >= $1
+       RETURNING product_id`,
+      [item.quantity, item.product_id],
+    );
+    if (inventory_result.rowCount !== 1) {
+      throw new AppError(409, 'stock_reservation_error', 'Reserved stock is inconsistent');
+    }
+  }
+}
+
+export async function update_order_status(order_id: string, status: OrderStatus, changed_by: string, note?: string) {
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    const current_result = await client.query(
+      `SELECT id, status
+       FROM orders
+       WHERE id = $1 AND deleted_at IS NULL
+       FOR UPDATE`,
+      [order_id],
+    );
+    const current_order = current_result.rows[0];
+    if (!current_order) throw new AppError(404, 'order_not_found', 'Order not found');
+    check_status_transition(current_order.status, status);
+
+    if (status === 'shipped') await commit_reserved_stock(client, order_id);
+
+    const updated_result = await client.query(
+      `UPDATE orders
+       SET status = $1, updated_at = now()
+       WHERE id = $2
+       RETURNING id, order_number, user_id, status, total_amount, shipping_address, created_at, updated_at`,
+      [status, order_id],
+    );
+    await client.query(
+      `INSERT INTO order_status_history (order_id, status, changed_by, note)
+       VALUES ($1, $2, $3, $4)`,
+      [order_id, status, changed_by, note ?? null],
+    );
+    await client.query('COMMIT');
+    return updated_result.rows[0];
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }

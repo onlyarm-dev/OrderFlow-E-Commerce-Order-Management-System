@@ -1,0 +1,6 @@
+<svg role="img" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <title>Lazada</title>
+  <defs><linearGradient id="lazada-gradient" x1="7" y1="8" x2="58" y2="56" gradientUnits="userSpaceOnUse"><stop stop-color="#FF7A00"/><stop offset=".48" stop-color="#F33378"/><stop offset="1" stop-color="#6D1DCE"/></linearGradient></defs>
+  <path fill="url(#lazada-gradient)" d="M32 4 58 19v27L32 61 6 46V19L32 4Z"/>
+  <path fill="#fff" d="m20 22 12-7 12 7v17L32 47 20 40V22Zm8 4v11l4 2 4-2V26l-4-2-4 2Z"/>
+</svg>

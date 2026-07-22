@@ -27,8 +27,38 @@ export type Order = {
   user_id: string;
   status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   total_amount: string;
-  shipping_address: { name: string; city: string; country: string };
+  shipping_address: { name: string; address_line_1: string; city: string; postal_code: string; country: string };
   created_at: string;
+  updated_at: string;
+};
+
+export type OrderItem = {
+  id: string;
+  product_id: string;
+  sku: string;
+  product_name: string;
+  quantity: number;
+  unit_price: string;
+  line_total: string;
+  created_at: string;
+};
+
+export type OrderStatusHistory = {
+  id: number;
+  status: Order['status'];
+  note: string | null;
+  created_at: string;
+  changed_by: string | null;
+  changed_by_first_name: string | null;
+  changed_by_last_name: string | null;
+};
+
+export type OrderDetail = Order & {
+  customer_email: string;
+  customer_first_name: string;
+  customer_last_name: string;
+  items: OrderItem[];
+  status_history: OrderStatusHistory[];
 };
 
 export type ProductPage = { data: Product[]; pagination: { total: number } };
@@ -75,4 +105,12 @@ export function create_order(input: {
   shipping_address: { name: string; address_line_1: string; city: string; postal_code: string; country: string };
 }, token: string): Promise<{ data: Order }> {
   return api_request('/orders', { method: 'POST', body: JSON.stringify(input) }, token);
+}
+
+export function fetch_order(order_id: string, token: string): Promise<{ data: OrderDetail }> {
+  return api_request(`/orders/${order_id}`, {}, token);
+}
+
+export function update_order_status(order_id: string, status: 'shipped' | 'delivered', token: string): Promise<{ data: Order }> {
+  return api_request(`/orders/${order_id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }, token);
 }

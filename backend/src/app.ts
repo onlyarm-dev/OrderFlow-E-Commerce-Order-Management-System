@@ -11,7 +11,22 @@ import product_routes from './routes/product_routes.js';
 export const app = express();
 
 app.disable('x-powered-by');
-app.use(cors({ origin: env.CORS_ORIGIN }));
+const allowed_origin = env.CORS_ORIGIN.trim();
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || origin === allowed_origin) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`CORS origin not allowed: ${origin}`));
+    },
+    credentials: true,
+  }),
+);
+
 app.use(express.json({ limit: '1mb' }));
 app.get('/health', (_request, response) => response.json({ status: 'ok' }));
 app.use('/docs', swagger_ui.serve, swagger_ui.setup(swagger_spec));

@@ -20,7 +20,7 @@ services:
   backend:
     build: ./backend
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-onlyarm_oms}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-onlyarm_oms}}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
       PORT: 4000

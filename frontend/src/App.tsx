@@ -3,11 +3,12 @@ import { fetch_orders, fetch_products, type AuthSession, type Order, type Produc
 import { AuthScreen } from './components/AuthScreen';
 import { Dashboard } from './components/Dashboard';
 import { OrdersView } from './components/OrdersView';
+import { MarketplaceView } from './components/MarketplaceView';
 import { ProductsView } from './components/ProductsView';
 import { Shop } from './components/Shop';
 import { LanguageToggle, useI18n } from './i18n';
 
-type View = 'dashboard' | 'products' | 'orders';
+type View = 'dashboard' | 'products' | 'orders' | 'marketplace';
 
 function restore_session(): AuthSession | null {
   try {
@@ -79,9 +80,11 @@ export default function App() {
     { id: 'dashboard', label: t('dashboard'), icon: '⌂' },
     { id: 'orders', label: t('orders'), icon: '□' },
     { id: 'products', label: t('products'), icon: '◇' },
+    { id: 'marketplace', label: t('marketplace'), icon: '◎' },
   ];
-  const title = view === 'dashboard' ? `${t('morning')}, ${session.user.first_name}.` : view === 'products' ? t('products_title') : t('orders_title');
-  const subtitle = view === 'dashboard' ? t('dashboard_hint') : view === 'products' ? t('products_hint') : t('orders_hint');
+  const title = view === 'dashboard' ? `${t('morning')}, ${session.user.first_name}.` : view === 'products' ? t('products_title') : view === 'orders' ? t('orders_title') : t('marketplace_title');
+  const subtitle = view === 'dashboard' ? t('dashboard_hint') : view === 'products' ? t('products_hint') : view === 'orders' ? t('orders_hint') : t('marketplace_hint');
+  const section_label = view === 'dashboard' ? t('dashboard') : view === 'products' ? t('products') : view === 'orders' ? t('orders') : t('marketplace');
   const role_label = t(`role_${session.user.role}`);
 
   return (
@@ -94,11 +97,12 @@ export default function App() {
 
       <main className="min-w-0 px-5 py-6 sm:px-8 lg:px-10 lg:py-9">
         <div className="mb-5 flex gap-2 overflow-x-auto lg:hidden">{nav_items.map((item) => <button key={item.id} className={`whitespace-nowrap rounded-xl px-4 py-2 text-sm font-bold ${view === item.id ? 'bg-ink text-white' : 'bg-white'}`} onClick={() => set_view(item.id)}>{item.label}</button>)}<LanguageToggle /><button className="ml-auto rounded-xl bg-white px-4 py-2 text-sm" onClick={logout}>{t('sign_out')}</button></div>
-        <header className="mb-9 flex flex-col justify-between gap-5 sm:flex-row sm:items-center"><div><p className="mb-1 text-sm font-semibold uppercase tracking-wider text-moss">{view === 'dashboard' ? t('dashboard') : view === 'products' ? t('products') : t('orders')}</p><h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{title}</h1><p className="mt-2 text-stone-500">{subtitle}</p></div><div className="flex items-center gap-3 self-start rounded-2xl bg-white p-2 pr-4 shadow-card"><div className="grid size-10 place-items-center rounded-xl bg-coral font-bold text-white">{session.user.first_name.slice(0, 1).toUpperCase()}</div><div><p className="text-sm font-bold">{session.user.first_name}</p><p className="text-xs text-stone-500">{role_label}</p></div></div></header>
+        <header className="mb-9 flex flex-col justify-between gap-5 sm:flex-row sm:items-center"><div><p className="mb-1 text-sm font-semibold uppercase tracking-wider text-moss">{section_label}</p><h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{title}</h1><p className="mt-2 text-stone-500">{subtitle}</p></div><div className="flex items-center gap-3 self-start rounded-2xl bg-white p-2 pr-4 shadow-card"><div className="grid size-10 place-items-center rounded-xl bg-coral font-bold text-white">{session.user.first_name.slice(0, 1).toUpperCase()}</div><div><p className="text-sm font-bold">{session.user.first_name}</p><p className="text-xs text-stone-500">{role_label}</p></div></div></header>
 
         {view === 'dashboard' && <Dashboard products={products} orders={orders} api_error={api_error} />}
         {view === 'products' && <ProductsView session={session} products={products} loading={loading_products} error={api_error} search={search} set_search={set_search} reload={load_products} />}
         {view === 'orders' && <OrdersView session={session} products={products} on_orders_change={set_orders} on_order_created={load_products} />}
+        {view === 'marketplace' && <MarketplaceView />}
       </main>
     </div>
   );
